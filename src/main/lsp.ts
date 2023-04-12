@@ -648,7 +648,7 @@ class LSPManager {
 
             case 'lua':
                 const luaVersion = await getLatestVersion("https://api.github.com/repos/LuaLS/lua-language-server/releases/latest")
-                remoteUrl = `https://github.com/LuaLS/lua-language-server/releases/download/${luaVersion}`
+                remoteUrl = `https://github.com/LuaLS/lua-language-server/releases/download/${luaVersion}/`
                 let llsName = `lua-language-server-${luaVersion}`
 
                 if (osType === "Darwin") {
@@ -714,7 +714,7 @@ class LSPManager {
 
                 await fs.promises.rm(downloadPath)
 
-                const luaLSPath = path.join(lspDir, "lua", "lua-language-server")
+                const luaLSPath = path.join(lspDir, "lua", "bin", "lua-language-server")
 
                 await fs.promises.chmod(luaLSPath, 0o755)
 
