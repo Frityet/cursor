@@ -646,6 +646,83 @@ class LSPManager {
                     args: ['--languageserver'],
                 }
 
+            case 'lua':
+                const luaVersion = await getLatestVersion("https://api.github.com/repos/LuaLS/lua-language-server/releases/latest")
+                remoteUrl = `https://github.com/LuaLS/lua-language-server/releases/download/${luaVersion}`
+                let llsName = `lua-language-server-${luaVersion}`
+
+                if (osType === "Darwin") {
+                    if (architecture === "x64") {
+                        llsName += "-darwin-x64"
+                    } else if (architecture === "arm64") {
+                        llsName += "-darwin-arm64"
+                    } else {
+                        log.error("Unsupported architecture - " + architecture)
+                        throw new Error("Unsupported architecture - " + architecture)
+                    }
+                } else if (osType == "Linux") {
+                    if (architecture === "x64") {
+                        llsName += "-linux-x64"
+                    } else if (architecture === "arm64") {
+                        llsName += "-linux-arm64"
+                    } else {
+                        log.error("Unsupported architecture - " + architecture)
+                        throw new Error("Unsupported architecture - " + architecture)
+                    }
+                } else if (osType === "Windows_NT") {
+                    if (architecture === "x64") {
+                        llsName += "-win32-x64"
+                    } else if (architecture === "ia32") {
+                        llsName += "-win32-ia32"
+                    } else {
+                        log.error("Unsupported architecture - " + architecture)
+                        throw new Error("Unsupported architecture - " + architecture)
+                    }
+                } else {
+                    log.error("Unsupported OS - " + osType)
+                    throw new Error("Unsupported OS - " + osType)
+                }
+
+                const llsDir = path.join(lspDir, "lua")
+                if (!fs.existsSync(llsDir)) {
+                    fs.mkdirSync(llsDir)
+                }
+
+                downloadPath = path.join(lspDir, "lua", "lua-language-server")
+                if (osType === "Windows_NT") {
+                    remoteUrl += llsName + ".zip"
+                    downloadPath += ".zip"
+                } else {
+                    remoteUrl += llsName + ".tar.gz"
+                    downloadPath += ".tar.gz"
+                }
+
+                log.info(`Downloading ${downloadPath} from ${remoteUrl}`)
+                await downloadFile(remoteUrl, downloadPath)
+
+
+                if (osType === "Windows_NT") {
+                    zip = new AdmZip(downloadPath)
+                    extractFn = promisify(zip.extractAllToAsync.bind(zip))
+                    await extractFn(path.join(lspDir, "lua"), true, false)
+                } else {
+                    await tar.x({
+                        file: downloadPath,
+                        C: path.join(lspDir, "lua"),
+                    })
+                }
+
+                await fs.promises.rm(downloadPath)
+
+                const luaLSPath = path.join(lspDir, "lua", "lua-language-server")
+
+                await fs.promises.chmod(luaLSPath, 0o755)
+
+                return {
+                    command: luaLSPath,
+                    args: [],
+                }
+
             default:
                 return null
         }
